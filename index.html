@@ -3,12 +3,584 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NewServer</title>
+    <title>NoteFlow</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b1020;
+            --card: rgba(18, 24, 45, 0.78);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text: #f4f7ff;
+            --muted: #97a3c2;
+            --accent: #6ee7ff;
+            --accent-2: #9b8cff;
+            --danger: #ff6b81;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+            --radius: 24px;
+            --max-width: 1180px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { min-height: 100%; }
+
+        body {
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(155, 140, 255, 0.28), transparent 32%),
+                radial-gradient(circle at right 20%, rgba(110, 231, 255, 0.18), transparent 24%),
+                linear-gradient(180deg, #070a14 0%, #0b1020 52%, #10162a 100%);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: radial-gradient(circle at center, black, transparent 82%);
+            opacity: 0.55;
+        }
+
+        .app {
+            width: min(var(--max-width), calc(100% - 32px));
+            margin: 24px auto;
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr);
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .panel, .editor {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(22px);
+        }
+
+        .panel {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 48px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #08101d;
+            font-size: 1.3rem;
+            font-weight: 900;
+            box-shadow: 0 12px 24px rgba(110, 231, 255, 0.25);
+        }
+
+        .brand h1, .editor-header h2, .note-card h3, p { margin: 0; }
+
+        .brand p, .subtle, .note-card p, .note-meta, .footer-tools, .empty { color: var(--muted); }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .stat {
+            padding: 12px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .search, .input, textarea, button {
+            font: inherit;
+        }
+
+        .search, .input, textarea {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(8, 12, 24, 0.78);
+            color: var(--text);
+            border-radius: 16px;
+            outline: none;
+        }
+
+        .search:focus, .input:focus, textarea:focus {
+            border-color: rgba(110, 231, 255, 0.55);
+            background: rgba(8, 12, 24, 0.96);
+        }
+
+        .search, .input { height: 48px; padding: 0 16px; }
+
+        .toolbar { display: grid; gap: 10px; margin-bottom: 14px; }
+
+        .toolbar-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 0 16px;
+            min-height: 42px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #07101d; font-weight: 800; }
+        .btn.danger { background: rgba(255, 107, 129, 0.16); color: #ffd6dc; }
+
+        .note-list {
+            display: grid;
+            gap: 10px;
+            overflow: auto;
+            padding-right: 4px;
+            flex: 1;
+        }
+
+        .note-card {
+            width: 100%;
+            text-align: left;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .note-card.active { border-color: rgba(110, 231, 255, 0.38); background: rgba(110, 231, 255, 0.08); }
+        .note-card h3 { margin-bottom: 6px; font-size: 1rem; }
+        .note-card p { line-height: 1.45; font-size: 0.9rem; }
+
+        .note-meta {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.78rem;
+        }
+
+        .editor {
+            padding: 22px;
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+            gap: 14px;
+            min-height: calc(100vh - 48px);
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .editor-header h2 { font-size: 1.6rem; }
+        .editor-header .subtle { font-size: 0.95rem; margin-top: 4px; }
+
+        .tag-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--muted);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.88rem;
+        }
+
+        textarea {
+            resize: none;
+            padding: 18px;
+            min-height: 360px;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        .footer-tools {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+        }
+
+        .empty {
+            display: grid;
+            place-items: center;
+            text-align: center;
+            min-height: 220px;
+            border-radius: 22px;
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            padding: 18px;
+        }
+
+        @media (max-width: 960px) {
+            .app { grid-template-columns: 1fr; }
+            .panel, .editor { min-height: auto; }
+        }
+
+        @media (max-width: 640px) {
+            .app { width: min(var(--max-width), calc(100% - 20px)); margin: 10px auto; }
+            .panel, .editor { padding: 16px; border-radius: 20px; }
+            .stats { grid-template-columns: 1fr; }
+            textarea { min-height: 300px; }
+        }
+    </style>
 </head>
 <body>
+    <main class="app">
+        <aside class="panel">
+            <div class="brand">
+                <div class="logo">N</div>
+                <div>
+                    <h1>NoteFlow</h1>
+                    <p>Fast notes, local only, no login.</p>
+                </div>
+            </div>
 
-    <h1>This is my new server!</h1>
-    <p>Hello world!</p>
-    
+            <div class="stats" aria-label="note statistics">
+                <div class="stat"><strong id="totalNotes">0</strong><span>Notes</span></div>
+                <div class="stat"><strong id="wordsCount">0</strong><span>Words</span></div>
+                <div class="stat"><strong id="lastSaved">--</strong><span>Updated</span></div>
+            </div>
+
+            <div class="toolbar">
+                <input id="searchInput" class="search" type="search" placeholder="Search notes..." aria-label="Search notes">
+                <div class="toolbar-row">
+                    <button id="newNoteBtn" class="btn primary" type="button">New note</button>
+                    <button id="sortBtn" class="btn" type="button">Newest</button>
+                    <button id="clearBtn" class="btn danger" type="button">Clear all</button>
+                </div>
+            </div>
+
+            <div id="noteList" class="note-list" aria-label="Saved notes"></div>
+        </aside>
+
+        <section class="editor">
+            <div class="editor-header">
+                <div>
+                    <h2>Editor</h2>
+                    <div class="subtle">Write, search, and keep everything in your browser storage.</div>
+                </div>
+                <div class="tag-row">
+                    <span class="tag" id="statusTag">Ready</span>
+                    <span class="tag" id="noteIdTag">No note selected</span>
+                </div>
+            </div>
+
+            <input id="titleInput" class="input" type="text" placeholder="Note title" aria-label="Note title">
+            <textarea id="contentInput" placeholder="Start typing your note here..."></textarea>
+
+            <div class="footer-tools">
+                <div id="helperText">Tip: notes auto-save as you type.</div>
+                <div class="toolbar-row">
+                    <button id="duplicateBtn" class="btn" type="button">Duplicate</button>
+                    <button id="deleteBtn" class="btn danger" type="button">Delete note</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const STORAGE_KEY = 'noteflow.notes.v1';
+        const SORT_KEY = 'noteflow.sort.v1';
+        const SELECTED_KEY = 'noteflow.selected.v1';
+
+        const noteList = document.getElementById('noteList');
+        const searchInput = document.getElementById('searchInput');
+        const newNoteBtn = document.getElementById('newNoteBtn');
+        const sortBtn = document.getElementById('sortBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const duplicateBtn = document.getElementById('duplicateBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const titleInput = document.getElementById('titleInput');
+        const contentInput = document.getElementById('contentInput');
+        const totalNotes = document.getElementById('totalNotes');
+        const wordsCount = document.getElementById('wordsCount');
+        const lastSaved = document.getElementById('lastSaved');
+        const statusTag = document.getElementById('statusTag');
+        const noteIdTag = document.getElementById('noteIdTag');
+        const helperText = document.getElementById('helperText');
+
+        const createId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `note-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const formatTime = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? '--' : date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+        const wordCount = (text) => { const trimmed = text.trim(); return trimmed ? trimmed.split(/\s+/).length : 0; };
+        const escapeHtml = (value) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+
+        const loadNotes = () => { try { const raw = localStorage.getItem(STORAGE_KEY); const notes = raw ? JSON.parse(raw) : []; return Array.isArray(notes) ? notes : []; } catch { return []; } };
+        const saveNotes = (nextNotes) => localStorage.setItem(STORAGE_KEY, JSON.stringify(nextNotes));
+        const loadSortMode = () => localStorage.getItem(SORT_KEY) || 'updatedAt';
+        const saveSortMode = (mode) => localStorage.setItem(SORT_KEY, mode);
+
+        let notes = loadNotes();
+        let selectedId = localStorage.getItem(SELECTED_KEY) || '';
+        let sortMode = loadSortMode();
+        let searchTerm = '';
+
+        if (!notes.length) {
+            const now = new Date().toISOString();
+            notes = [{ id: createId(), title: 'Welcome to NoteFlow', content: 'This is a local-first note app. Create notes, search them, and keep everything in your browser.', createdAt: now, updatedAt: now }];
+            selectedId = notes[0].id;
+            saveNotes(notes);
+            localStorage.setItem(SELECTED_KEY, selectedId);
+        }
+
+        const getSelectedNote = () => notes.find((note) => note.id === selectedId) || null;
+
+        const getSortedNotes = () => {
+            const list = [...notes].sort((a, b) => sortMode === 'updatedAt'
+                ? new Date(b.updatedAt) - new Date(a.updatedAt)
+                : new Date(b.createdAt) - new Date(a.createdAt));
+
+            if (!searchTerm) {
+                return list;
+            }
+
+            const term = searchTerm.toLowerCase();
+            return list.filter((note) => `${note.title}\n${note.content}`.toLowerCase().includes(term));
+        };
+
+        const upsertNote = (note) => {
+            const index = notes.findIndex((item) => item.id === note.id);
+            if (index >= 0) {
+                notes[index] = note;
+            } else {
+                notes.unshift(note);
+            }
+
+            saveNotes(notes);
+            selectedId = note.id;
+            localStorage.setItem(SELECTED_KEY, note.id);
+        };
+
+        const render = () => {
+            const visibleNotes = getSortedNotes();
+            const current = getSelectedNote();
+
+            totalNotes.textContent = String(notes.length);
+            sortBtn.textContent = sortMode === 'updatedAt' ? 'Newest' : 'Oldest';
+
+            if (current) {
+                if (document.activeElement !== titleInput) {
+                    titleInput.value = current.title;
+                }
+
+                if (document.activeElement !== contentInput) {
+                    contentInput.value = current.content;
+                }
+
+                wordsCount.textContent = String(wordCount(current.content));
+                lastSaved.textContent = formatTime(current.updatedAt);
+                statusTag.textContent = 'Editing';
+                noteIdTag.textContent = current.id.slice(0, 8);
+                helperText.textContent = `Created ${formatTime(current.createdAt)} • Updated ${formatTime(current.updatedAt)}`;
+            } else {
+                wordsCount.textContent = '0';
+                lastSaved.textContent = '--';
+                statusTag.textContent = 'Ready';
+                noteIdTag.textContent = 'No note selected';
+                helperText.textContent = 'Create a note to start writing.';
+            }
+
+            if (!visibleNotes.length) {
+                noteList.innerHTML = '<div class="empty">No notes match your search.</div>';
+                return;
+            }
+
+            noteList.innerHTML = visibleNotes.map((note) => {
+                const snippet = note.content.trim() || 'No content yet';
+                const preview = snippet.length > 100 ? `${snippet.slice(0, 100)}...` : snippet;
+                const active = note.id === selectedId ? 'active' : '';
+
+                return `
+                    <button class="note-card ${active}" type="button" data-note-id="${note.id}">
+                        <h3>${escapeHtml(note.title || 'Untitled note')}</h3>
+                        <p>${escapeHtml(preview)}</p>
+                        <div class="note-meta">
+                            <span>${wordCount(note.content)} words</span>
+                            <span>${formatTime(note.updatedAt)}</span>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        };
+
+        const selectNote = (noteId) => {
+            const note = notes.find((item) => item.id === noteId);
+            if (!note) {
+                return;
+            }
+
+            selectedId = noteId;
+            localStorage.setItem(SELECTED_KEY, noteId);
+            titleInput.value = note.title;
+            contentInput.value = note.content;
+            statusTag.textContent = 'Editing';
+            noteIdTag.textContent = note.id.slice(0, 8);
+            helperText.textContent = `Created ${formatTime(note.createdAt)} • Updated ${formatTime(note.updatedAt)}`;
+            render();
+        };
+
+        const createNote = (copyFromCurrent = false) => {
+            const now = new Date().toISOString();
+            const current = getSelectedNote();
+            const note = {
+                id: createId(),
+                title: copyFromCurrent && current ? `${current.title} Copy` : 'Untitled note',
+                content: copyFromCurrent && current ? current.content : '',
+                createdAt: now,
+                updatedAt: now
+            };
+
+            notes.unshift(note);
+            saveNotes(notes);
+            selectNote(note.id);
+            titleInput.focus();
+            titleInput.select();
+        };
+
+        const duplicateCurrentNote = () => {
+            const current = getSelectedNote();
+            if (!current) {
+                return;
+            }
+
+            const now = new Date().toISOString();
+            const copy = { id: createId(), title: `${current.title || 'Untitled note'} Copy`, content: current.content, createdAt: now, updatedAt: now };
+            notes.unshift(copy);
+            saveNotes(notes);
+            selectNote(copy.id);
+            render();
+        };
+
+        const deleteCurrentNote = () => {
+            if (!selectedId) {
+                return;
+            }
+
+            const note = getSelectedNote();
+            if (!note) {
+                return;
+            }
+
+            const confirmDelete = notes.length > 1 ? window.confirm(`Delete "${note.title || 'Untitled note'}"?`) : window.confirm('Delete your only note?');
+            if (!confirmDelete) {
+                return;
+            }
+
+            notes = notes.filter((item) => item.id !== selectedId);
+            selectedId = notes[0]?.id || '';
+
+            if (notes.length) {
+                saveNotes(notes);
+                localStorage.setItem(SELECTED_KEY, selectedId);
+                selectNote(selectedId);
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(SELECTED_KEY);
+                titleInput.value = '';
+                contentInput.value = '';
+                render();
+            }
+        };
+
+        noteList.addEventListener('click', (event) => {
+            const noteCard = event.target.closest('[data-note-id]');
+            if (noteCard) {
+                selectNote(noteCard.dataset.noteId);
+            }
+        });
+
+        searchInput.addEventListener('input', () => {
+            searchTerm = searchInput.value.trim();
+            render();
+        });
+
+        newNoteBtn.addEventListener('click', () => createNote(false));
+        duplicateBtn.addEventListener('click', duplicateCurrentNote);
+        deleteBtn.addEventListener('click', deleteCurrentNote);
+
+        sortBtn.addEventListener('click', () => {
+            sortMode = sortMode === 'updatedAt' ? 'createdAt' : 'updatedAt';
+            saveSortMode(sortMode);
+            render();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (!window.confirm('Delete every note?')) {
+                return;
+            }
+
+            notes = [];
+            selectedId = '';
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(SELECTED_KEY);
+            titleInput.value = '';
+            contentInput.value = '';
+            render();
+        });
+
+        titleInput.addEventListener('input', () => {
+            const current = getSelectedNote();
+            if (!current) {
+                return;
+            }
+
+            const updated = { ...current, title: titleInput.value.trim() || 'Untitled note', content: contentInput.value, updatedAt: new Date().toISOString() };
+            upsertNote(updated);
+            statusTag.textContent = 'Saved';
+            lastSaved.textContent = formatTime(updated.updatedAt);
+            helperText.textContent = `Created ${formatTime(updated.createdAt)} • Updated ${formatTime(updated.updatedAt)}`;
+            render();
+        });
+
+        contentInput.addEventListener('input', () => {
+            const current = getSelectedNote();
+            if (!current) {
+                return;
+            }
+
+            const updated = { ...current, title: titleInput.value.trim() || 'Untitled note', content: contentInput.value, updatedAt: new Date().toISOString() };
+            upsertNote(updated);
+            statusTag.textContent = 'Saved';
+            lastSaved.textContent = formatTime(updated.updatedAt);
+            wordsCount.textContent = String(wordCount(updated.content));
+            helperText.textContent = `Created ${formatTime(updated.createdAt)} • Updated ${formatTime(updated.updatedAt)}`;
+            render();
+        });
+
+        render();
+        if (selectedId) {
+            selectNote(selectedId);
+        }
+    </script>
 </body>
 </html>

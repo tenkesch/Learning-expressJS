@@ -13,13 +13,13 @@ if (PORT == 3000)
 	console.log('Failed to locate port from .env file, using 3000 instead.')
 
 app.get('/', (req, res) => {
-	const fileName = 'index.html'
-	res.sendFile(fileName, (err) => {
+	const filePath = path.join(__dirname, 'index.html')
+
+	res.sendFile(filePath, (err) => {
 		err
 			? console.log('Error happened!')
-			: console.log(`Path sent: ${fileName}`)
+			: console.log(`Path sent: ${filePath}`)
 	})
-	// res.send('Hello world!')
 })
 
 app.listen(PORT, () => console.log(`Listening on PORT [${PORT}]`))
