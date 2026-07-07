@@ -12,3 +12,9 @@ const storage = multer.diskStorage({
 })
 
 export const upload = multer({ storage: storage })
+export const dir = {
+	utils: 'utils',
+	public: 'public/',
+	uploads: 'uploads/',
+	middleware: 'middleware/',
+}

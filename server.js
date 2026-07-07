@@ -2,7 +2,7 @@ import express from 'express'
 import path from 'path'
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
-import { upload } from './utils/filemanagement.script.js'
+import { upload, dir } from './utils/filemanagement.script.js'
 
 dotenv.config()
 const app = express()
@@ -17,14 +17,16 @@ app.post('/api/upload', upload.single('avatar'), (req, res, next) => {
 	// req.file is the `avatar` file
 	// req.body will hold the text fields, if there were any
 	console.log('Upload successful!')
-	res.json(req.body)
+
+	const response = { ok: true }
+	res.json(response)
 })
 
 app.get('/', (req, res) => {
-	const filePath = path.join(__dirname, 'index.html')
+	const filePath = path.join(__dirname, dir.public, 'index.html')
 
 	res.sendFile(filePath, (err) => {
-		if (err) res.send('There was an error with sending index.html file...')
+		res.send('There was an error with sending index.html file...')
 	})
 })
 
