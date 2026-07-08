@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, 
+                   initial-scale=1.0"
+		/>
+		<title>404 Page Not Found</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+				min-height: 100vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 20px;
+			}
+
+			.error-container {
+				text-align: center;
+				background: rgb(28, 28, 28);
+				padding: 60px 40px;
+				border-radius: 20px;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 10);
+				max-width: 500px;
+				animation: slideUp 0.6s ease-out;
+			}
+
+			@keyframes slideUp {
+				from {
+					opacity: 0;
+					transform: translateY(30px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			h1 {
+				font-size: 120px;
+				font-weight: 900;
+				background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+				margin-bottom: 20px;
+				line-height: 1;
+			}
+
+			p {
+				font-size: 18px;
+				color: #b5b5b5;
+				margin-bottom: 40px;
+				line-height: 1.6;
+			}
+
+			a {
+				display: inline-block;
+				padding: 14px 32px;
+				background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+				color: white;
+				text-decoration: none;
+				border-radius: 50px;
+				font-weight: 600;
+				font-size: 16px;
+				transition: all 0.3s ease;
+				box-shadow: 0 10px 25px rgba(255, 107, 0, 0.4);
+			}
+
+			a:hover {
+				transform: translateY(-3px);
+				box-shadow: 0 15px 35px rgba(255, 107, 0, 0.6);
+			}
+
+			a:active {
+				transform: translateY(-1px);
+			}
+
+			@media (max-width: 600px) {
+				.error-container {
+					padding: 40px 25px;
+				}
+
+				h1 {
+					font-size: 80px;
+				}
+
+				p {
+					font-size: 16px;
+				}
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="error-container">
+			<h1>404</h1>
+			<p>Oops! The page you're looking for is not here...</p>
+			<a href="/"> Go Back to Home </a>
+		</div>
+	</body>
+</html>

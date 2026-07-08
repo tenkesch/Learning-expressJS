@@ -5,7 +5,9 @@ export function logger(req, res, next) {
 	res.on('finish', () => {
 		const status = res.statusCode
 		const statusLabel = status >= 400 ? 'ERROR' : 'INFO'
-		console.log(`[${timestamp}] [${statusLabel}] ${method} ${url} → ${status}`)
+		console.log(
+			`[${timestamp}] [${statusLabel}] ${method} '${url}' → ${status}`,
+		)
 	})
 
 	next()

@@ -1,6 +1,5 @@
 const { Client } = require('@neondatabase/serverless')
 require('dotenv').config()
-
 ;(async () => {
 	try {
 		const client = new Client({ connectionString: process.env.DATABASE_URL })
