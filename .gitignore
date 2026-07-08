@@ -1,4 +1,6 @@
 .env
+.neon
+.agents/
 node_modules/
 index2.html
 uploads/
